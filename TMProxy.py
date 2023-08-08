@@ -7,11 +7,21 @@
 import requests
 import tkinter as tk
 from tkinter import messagebox
+import pyperclip
+
 # --------------------------------------------------------------------------------
 class TmproxyForm:
     def __init__(self, api_key_var):
         self.api_key_var = api_key_var
         self.proxy = None
+
+        # Create buttons for copying proxy information
+        self.socks5_button = tk.Button(text="Copy SOCKS5 Proxy", command=self.copy_socks5, state="disabled")
+        self.https_button = tk.Button(text="Copy HTTPS Proxy", command=self.copy_https, state="disabled")
+
+        # You need to place these buttons on your tkinter window
+        self.socks5_button.pack()
+        self.https_button.pack()
 
     def get_current_proxy(self):
         api_key = self.api_key_var.get()
@@ -21,14 +31,34 @@ class TmproxyForm:
         if response.status_code == 200:
             response_json = response.json()
             self.proxy = response_json["data"]
-            messagebox.showinfo("Current Proxy", f"Địa chỉ IP thật: {self.proxy['ip_allow']}\n"
-                                                  f"Proxy Fake: {self.proxy['https']}\n"
-                                                  f"Thời gian đổi ip tiếp theo: {self.proxy['next_request']} giây\n"
-                                                  f"Hết hạn vào: {self.proxy['expired_at']}")
+            messagebox.showinfo("Current Proxy", 
+                                f"Địa chỉ IP thật: {self.proxy['ip_allow']}\n"
+                                f"Tên khu vực: {self.proxy['location_name']}\n"
+                                f"Proxy SOCKS5: {self.proxy['socks5']}\n"
+                                f"Proxy HTTPS: {self.proxy['https']}\n"
+                                f"Thời gian còn sống của proxy: {self.proxy['timeout']} giây\n"
+                                f"Thời gian đổi IP tiếp theo: {self.proxy['next_request']} giây\n"
+                                f"Hết hạn vào: {self.proxy['expired_at']}")
+
+            # Enable the copy buttons if the API call was successful
+            self.socks5_button['state'] = 'normal'
+            self.https_button['state'] = 'normal'
+
             with open('api_key.txt', 'w') as f:
                 f.write(api_key)
         else:
             messagebox.showinfo("Error", f"Lỗi trong quá trình gửi yêu cầu API: {response.status_code}")
+
+    def copy_socks5(self):
+        if self.proxy:
+            pyperclip.copy(self.proxy['socks5'])
+            messagebox.showinfo("Copied", "Proxy SOCKS5 đã được copy vào clipboard.")
+
+    def copy_https(self):
+        if self.proxy:
+            pyperclip.copy(self.proxy['https'])
+            messagebox.showinfo("Copied", "Proxy HTTPS đã được copy vào clipboard.")
+
 
     def get_new_proxy(self):
         api_key = self.api_key_var.get()
